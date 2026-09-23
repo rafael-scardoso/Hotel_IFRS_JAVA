@@ -253,7 +253,6 @@ flowchart TD
 ```
 
 ---
-
 ## 4. MER — Modelo Entidade-Relacionamento
 
 ```mermaid
@@ -359,16 +358,6 @@ erDiagram
         decimal valor_cobrado
         datetime data_utilizacao
     }
-```
-
-**Notas de modelagem**
-- `QUARTO` e `FUNCIONARIO` usam a estratégia **tabela por subclasse** (equivalente ao `InheritanceType.JOINED` do JPA): cada subtipo tem sua própria tabela, cuja PK é também FK para a tabela-base.
-- A coluna `tipo`/`cargo` na tabela-base é o **discriminador**, evitando ter que consultar as três tabelas filhas só para saber o subtipo.
-- `RESERVA_SERVICO` resolve o relacionamento N:N entre `RESERVA` e `SERVICO`, guardando quantidade e valor cobrado no momento do uso (histórico de preço).
-- **Correção v2:** `RESERVA.situacao` ganhou o valor `ATIVA` para representar o período em que o hóspede está de fato hospedado — antes disso, o check-in usava o mesmo valor `FINALIZADA` do check-out, o que quebrava a checagem de sobreposição de datas (uma reserva com hóspede ainda hospedado deixava de ser considerada como "ocupando" o quarto).
-- **Correção v2:** `QUARTO.situacao = RESERVADO` agora é efetivamente usado entre a confirmação da reserva e o check-in, em vez de ser um valor do enum sem nenhuma transição que levasse a ele.
-
----
 
 ## 5. Modelagem do Banco de Dados (DDL)
 

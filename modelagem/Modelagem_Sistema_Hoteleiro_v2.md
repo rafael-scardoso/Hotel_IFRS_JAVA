@@ -56,7 +56,7 @@ flowchart LR
 **Observações**
 - `Gerente` herda os casos de uso de `Recepcionista` e também gerencia quartos/funcionários/serviços da sua unidade e gera relatórios.
 - `Administrador` herda de `Gerente` e é o único que pode cadastrar/gerenciar hotéis (unidades da rede).
-- `UC3 Realizar Reserva` agora mostra explicitamente a relação de *include* com `UC2 Consultar Disponibilidade` — antes essa relação estava documentada só em texto.
+- `UC3 Realizar Reserva` mostra explicitamente a relação de *include* com `UC2 Consultar Disponibilidade`.
 
 ---
 
@@ -229,7 +229,7 @@ classDiagram
 ```mermaid
 flowchart TD
     A([Início]) --> B[Funcionário seleciona hóspede e período]
-    B --> C{Quarto disponível\nno período?}
+    B --> C{Quarto disponível no período?}
     C -- Não --> D[Exibir mensagem de indisponibilidade]
     D --> B
     C -- Sim --> E[Calcular valor da diária x período]
@@ -237,22 +237,23 @@ flowchart TD
     F --> G{Confirmar reserva?}
     G -- Não --> H[Cancelar reserva]
     H --> Z1([Fim])
-    G -- Sim --> I["Situação da reserva = CONFIRMADA\nSituação do quarto = RESERVADO"]
-    I --> J{Data de chegada\ndo hóspede?}
+    G -- Sim --> I["Situação da reserva = CONFIRMADA<br/>Situação do quarto = RESERVADO"]
+    I --> J{Data de chegada do hóspede?}
     J -- Aguardando --> J
     J -- Chegou --> K[Realizar Check-in]
-    K --> L["Situação da reserva = ATIVA\nSituação do quarto = OCUPADO"]
-    L --> M{Hóspede utiliza\nserviços adicionais?}
-    M -- Sim --> N[Vincular serviço à reserva\nRegistrar em ReservaServico]
+    K --> L["Situação da reserva = ATIVA<br/>Situação do quarto = OCUPADO"]
+    L --> M{Hóspede utiliza serviços adicionais?}
+    M -- Sim --> N["Vincular serviço à reserva<br/>Registrar em ReservaServico"]
     N --> M
     M -- Não --> O[Hóspede solicita Check-out]
-    O --> P[Calcular valor total\ndiárias + serviços]
+    O --> P["Calcular valor total<br/>diárias + serviços"]
     P --> Q[Realizar Check-out]
-    Q --> R["Situação da reserva = FINALIZADA\nSituação do quarto = DISPONIVEL"]
+    Q --> R["Situação da reserva = FINALIZADA<br/>Situação do quarto = DISPONIVEL"]
     R --> Z2([Fim])
 ```
 
 ---
+
 ## 4. MER — Modelo Entidade-Relacionamento
 
 ```mermaid
@@ -283,19 +284,19 @@ erDiagram
         int numero
         int capacidade
         decimal valor_diaria_base
-        string tipo "STANDARD, LUXO, SUITE (discriminador)"
-        string situacao "DISPONIVEL, RESERVADO, OCUPADO, MANUTENCAO"
+        string tipo "STANDARD LUXO SUITE"
+        string situacao "DISPONIVEL RESERVADO OCUPADO MANUTENCAO"
     }
     QUARTO_STANDARD {
-        int quarto_id PK_FK
+        int quarto_id PK
     }
     QUARTO_LUXO {
-        int quarto_id PK_FK
+        int quarto_id PK
         decimal taxa_adicional
         string amenidades
     }
     QUARTO_SUITE {
-        int quarto_id PK_FK
+        int quarto_id PK
         boolean hidromassagem
         int numero_comodos
     }
@@ -304,7 +305,7 @@ erDiagram
         int hotel_id FK
         string nome
         string cpf UK
-        string cargo "RECEPCIONISTA, GERENTE, ADMINISTRADOR (discriminador)"
+        string cargo "RECEPCIONISTA GERENTE ADMINISTRADOR"
         decimal salario
         date data_contratacao
         string horario_trabalho
@@ -312,15 +313,15 @@ erDiagram
         date ferias_fim
     }
     RECEPCIONISTA {
-        int funcionario_id PK_FK
+        int funcionario_id PK
         string turno
     }
     GERENTE {
-        int funcionario_id PK_FK
+        int funcionario_id PK
         decimal meta_mensal
     }
     ADMINISTRADOR {
-        int funcionario_id PK_FK
+        int funcionario_id PK
         string nivel_acesso
     }
     HOSPEDE {
@@ -340,7 +341,7 @@ erDiagram
         date data_saida
         datetime data_checkin
         datetime data_checkout
-        string situacao "PENDENTE, CONFIRMADA, ATIVA, CANCELADA, FINALIZADA"
+        string situacao "PENDENTE CONFIRMADA ATIVA CANCELADA FINALIZADA"
         decimal valor_total
     }
     SERVICO {
@@ -358,6 +359,9 @@ erDiagram
         decimal valor_cobrado
         datetime data_utilizacao
     }
+```
+
+---
 
 ## 5. Modelagem do Banco de Dados (DDL)
 
@@ -486,6 +490,7 @@ CREATE INDEX idx_funcionario_hotel ON funcionario(hotel_id);
 ```
 
 **Regras de negócio que ficam fora do banco (implementadas em Java/DAO/Service):**
+
 - **Impedir sobreposição de datas** para o mesmo quarto ao criar/confirmar uma reserva:
   ```sql
   SELECT 1 FROM reserva
@@ -504,6 +509,7 @@ CREATE INDEX idx_funcionario_hotel ON funcionario(hotel_id);
 - **Verificação de disponibilidade** (`ReservaService.verificarDisponibilidade`) não é mais um método de `Quarto`: é uma consulta que cruza `quarto.situacao` com a tabela `reserva` para o período pedido.
 
 **Exemplo de consulta com JOIN (buscar um quarto do tipo Luxo com seus dados completos):**
+
 ```sql
 SELECT q.*, ql.taxa_adicional, ql.amenidades
 FROM quarto q
